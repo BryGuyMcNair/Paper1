@@ -17,11 +17,3 @@ montecarloPi <- function(trials) {
 
 montecarloPi(iternum)
 
-
-
-# $ apptainer shell \
-# /cvmfs/singularity.opensciencegrid.org/opensciencegrid/osgvo-r:3.5.0
-# Singularity :~/tutorial-ScalingUp-R> Rscript mcpi.R 10
-# [1] 3.14
-# Singularity :~/tutorial-ScalingUp-R> exit
-# $ 
