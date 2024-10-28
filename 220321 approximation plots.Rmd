@@ -1,0 +1,303 @@
+
+
+```
+
+### Approximation 1:
+
+
+```{r}
+library(ggplot2)
+
+# Give a value for the median
+m<-0.5
+
+# define exponential rate/intensity parameter
+lambda<-log(2)/m
+
+# set percentile to model (as a proportion)
+p<-0.5
+
+# find median of exponential
+median<-log(2)/lambda
+
+# find median on log scale
+medianz<-log(median)
+
+# generate a sample from the exponential distribution
+y<-rexp(n=1000,rate=lambda)
+
+# same sample on the log scale
+z<-log(y)
+
+# True density and survival function
+fy<-lambda*exp(-lambda*y)
+Sy<-exp(-lambda*y)
+# Calculate approximation 1 to the density
+# Checked these derivatives on 11/11/2018
+
+# define Tau=logit(F(quantile))
+Tau<-log(p/(1-p))
+
+# find value of quantile
+q<--log(1-p)/lambda
+
+# first order Taylor approximation to LF at the given quantile
+LF1qy<-1/(1-exp(-q*lambda))*lambda
+# second order Taylor approximation to LF at the given quantile
+LF2qy<--1/(1-exp(-q*lambda))^2*lambda^2*exp(-q*lambda)
+# third order Taylor approximation to LF at the given quantile
+LF3qy<-2/(1-exp(-q*lambda))^3*exp(-q*lambda)^2*lambda^3+1/(1-exp(-q*lambda))^2*lambda^3*exp(-q*lambda)
+
+# approximation to the density using the first order Taylor approximation for LF
+f1qy<-1/(1+exp(-(Tau+(y-q)*LF1qy)))*1/(1+exp(Tau+(y-q)*LF1qy))*LF1qy
+# approximation to the density using the second order Taylor approximation for LF
+f2qy<-1/(1+exp(-(Tau+(y-q)*LF1qy+LF2qy*(y-q)^2/2)))*1/(1+exp(Tau+(y-q)*LF1qy+LF2qy*(y-q)^2/2))*(LF1qy+LF2qy*(y-q))
+# approximation to the density using the third order Taylor approximation for LF
+f3qy<-1/(1+exp(-(Tau+(y-q)*LF1qy+LF2qy*(y-q)^2/2+LF3qy*(y-q)^3/6)))*1/(1+exp(Tau+(y-q)*LF1qy+LF2qy*(y-q)^2/2+LF3qy*(y-q)^3/6))*(LF1qy+LF2qy*(y-q)+LF3qy*(y-q)^2/2)
+
+# approximation to the survival function using the first order Taylor approximation for LF
+S1qy<-1/(1+exp(Tau+(y-q)*LF1qy))
+# approximation to the survival function using the second order Taylor approximation for LF
+S2qy<-1/(1+exp(Tau+(y-q)*LF1qy+LF2qy*(y-q)^2/2))
+# approximation to the survival function using the third order Taylor approximation for LF
+S3qy<-1/(1+exp(Tau+(y-q)*LF1qy+LF2qy*(y-q)^2/2+LF3qy*(y-q)^3/6))
+
+# Density Plots of different orders of approximation 1 
+figure1.a<-ggplot()+
+  ggtitle('Figure 1.a. Approximation 1: 1st-, 2nd-, and 3rd-order Density Approximations')+
+  labs(y= "Density of Y", x = "y")+
+  scale_colour_manual("", 
+  values = c("True Density"="black","First-Order"="blue","Second-Order"="green","Third-Order"="red"))+
+  geom_line(aes(y,fy, color="True Density"))+
+  geom_line(aes(y,f1qy, color='First-Order'))+
+  geom_line(aes(y,f2qy, color='Second-Order'))+
+  geom_line(aes(y,f3qy, color='Third-Order'))
+
+figure1.a
+
+# Survival function Plots of different orders of approximation 1 
+figure1.b<-ggplot()+
+  ggtitle('Figure 1.b. Approximation 1: 1st-, 2nd-, and 3rd-order Survivor Function Approximations')+
+  labs(y= "Survivor Function of Y", x = "y")+
+  scale_colour_manual("", 
+                      values = c("True Survivor Function"="black","First-Order"="blue","Second-Order"="green","Third-Order"="red"))+
+  geom_line(aes(y,Sy, color="True Survivor Function"))+
+  geom_line(aes(y,S1qy, color='First-Order'))+
+  geom_line(aes(y,S2qy, color='Second-Order'))+
+  geom_line(aes(y,S3qy, color='Third-Order'))
+
+figure1.b
+
+
+# Calculate densities for approximation 2
+LF1y<--2*log(2)/y
+LF2y<-2*(log(2)/(y^2))*(2-y*log(2))
+LF3y<-2*log(2)/y^3*(2-y*log(2))*(y*log(2)-3)
+
+hcy<--LF1y
+hc1y<-2*(log(2)/y)^2
+hc2y<-2*(log(2))^2/y^3*(y*log(2)-3)
+
+f1y<-1/(1+exp(-(median-y)*LF1y))*1/(1+exp((median-y)*LF1y))*hcy
+f2y<-1/(1+exp(-(median-y)*(LF1y+LF2y*(median-y)/2)))*1/(1+exp((median-y)*(LF1y+LF2y*(median-y)/2)))*(hcy+hc1y*(median-y))
+f3y<-1/(1+exp(-(median-y)*(LF1y+LF2y*(median-y)/2+LF3y*(median-y)^2/6)))*1/(1+exp((median-y)*(LF1y+LF2y*(median-y)/2+LF3y*(median-y)^2/6)))*(hcy+hc1y*(median-y)+hc2y*(median-y)^2/2)
+
+S1y<-1/(1+exp((median-y)*LF1y))
+S2y<-1/(1+exp((median-y)*(LF1y+LF2y*(median-y)/2)))
+S3y<-1/(1+exp((median-y)*(LF1y+LF2y*(median-y)/2+LF3y*(median-y)^2/6)))
+
+# Plots of different orders of approximation 2 
+figure2.a<-ggplot()+
+  ggtitle('Figure 2.a. Approximation 2: 1st-, 2nd-, and 3rd-order Density Approximations')+
+  labs(y= "Density of Y", x = "y")+
+  scale_colour_manual("", 
+                      values = c("True Density"="black","First-Order"="blue","Second-Order"="green","Third-Order"="red"))+
+  geom_line(aes(y,fy, color="True Density"))+geom_line(aes(y,f1y, color='First-Order'))+
+  geom_line(aes(y,f2y, color='Second-Order'))+
+  geom_line(aes(y,f3y, color='Third-Order'))
+
+figure2.a
+
+# Survival function Plots of different orders of approximation 2 
+figure2.b<-ggplot()+
+  ggtitle('Figure 2.b. Approximation 2: 1st-, 2nd-, and 3rd-order Survivor Function Approximations')+
+  labs(y= "Survivor Function of Y", x = "y")+
+  scale_colour_manual("", 
+                      values = c("True Survivor Function"="black","First-Order"="blue","Second-Order"="green","Third-Order"="red"))+
+  geom_line(aes(y,Sy, color="True Survivor Function"))+
+  geom_line(aes(y,S1y, color='First-Order'))+
+  geom_line(aes(y,S2y, color='Second-Order'))+
+  geom_line(aes(y,S3y, color='Third-Order'))
+
+figure2.b
+
+# Calculate densities for approximation 2 of transformed data (intermediate step in approximation 4)
+LF1z=-2*log(2)
+LF2z=-2*log(2)+2*(log(2)^2)
+LF3z=-2*log(2)+6*(log(2)^2)-6*(log(2)^3)
+
+hcz<--LF1z
+hc1z<--LF2z
+hc2z<--LF3z
+
+fz<-fy*y
+f1z<-1/(1+exp(-(medianz-z)*LF1z))*1/(1+exp((medianz-z)*LF1z))*hcz
+f2z<-1/(1+exp(-(medianz-z)*(LF1z+LF2z*(medianz-z)/2)))*1/(1+exp((medianz-z)*(LF1z+LF2z*(medianz-z)/2)))*(hcz+hc1z*(medianz-z))
+f3z<-1/(1+exp(-(medianz-z)*(LF1z+LF2z*(medianz-z)/2+LF3z*(medianz-z)^2/6)))*1/(1+exp((medianz-z)*(LF1z+LF2z*(medianz-z)/2+LF3z*(medianz-z)^2/6)))*(hcz+hc1z*(medianz-z)+hc2z*(medianz-z)^2/2)
+
+S1z<-1/(1+exp((medianz-z)*LF1z))
+S2z<-1/(1+exp((medianz-z)*(LF1z+LF2z*(medianz-z)/2)))
+S3z<-1/(1+exp((medianz-z)*(LF1z+LF2z*(medianz-z)/2+LF3z*(medianz-z)^2/6)))
+
+# Plots of different orders of approximation 2 of transformed data (intermediate step in approximation 4)
+figure5.a<-ggplot()+
+  ggtitle('Figure 5.a. Approximation 4, Step 1: 1st-, 2nd-, and 3rd-order \n Density Approximations for Transformed Data')+
+  labs(y= "Density of log(Y)", x = "log(y)")+
+  scale_colour_manual("", 
+                      values = c("True Density"="black","First-Order"="blue","Second-Order"="green","Third-Order"="red"))+
+  geom_line(aes(z,fz, color="True Density"))+
+  geom_line(aes(z,f1z, color='First-Order'))+
+  geom_line(aes(z,f2z, color='Second-Order'))+
+  geom_line(aes(z,f3z, color='Third-Order'))
+
+figure5.a
+
+# Survival function Plots of different orders of approximation 2 of transformed data 
+figure5.b<-ggplot()+
+  ggtitle('Figure 5.b. Approximation 4, Step 1: 1st-, 2nd-, and 3rd-order Survivor Function Approximations')+
+  labs(y= "Survivor Function of Y", x = "y")+
+  scale_colour_manual("", 
+                      values = c("True Survivor Function"="black","First-Order"="blue","Second-Order"="green","Third-Order"="red"))+
+  geom_line(aes(z,Sy, color="True Survivor Function"))+
+  geom_line(aes(z,S1z, color='First-Order'))+
+  geom_line(aes(z,S2z, color='Second-Order'))+
+  geom_line(aes(z,S3z, color='Third-Order'))
+
+figure5.b
+```
+
+### Approximation 4, Step 2: Back-Transform Results from Step 1
+
+Using the transformation theorem, we obtain the following densities for the original expenentially-distributed random variable Y:
+
+```{r}
+# Calculate densities for back-transformed data, giving approximation 4
+g1y<-f1z/y
+g2y<-f2z/y
+g3y<-f3z/y
+
+# Plots of different orders of approximation 4
+figure6.a<-ggplot()+
+  ggtitle('Figure 6. Approximation 4: 1st-, 2nd-, and 3rd-order Density Approximations')+
+  labs(y= "Density of Y", x = "y")+
+  scale_colour_manual("", 
+                      values = c("True Density"="black","First-Order"="blue","Second-Order"="green","Third-Order"="red"))+
+  geom_line(aes(y,fy, color="True Density"))+
+  geom_line(aes(y,g1y, color='First-Order'))+
+  geom_line(aes(y,g2y, color='Second-Order'))+
+  geom_line(aes(y,g3y, color='Third-Order'))
+
+figure6.a
+
+# Survival function Plots of different orders of approximation 1 
+figure6.b<-ggplot()+
+  ggtitle('Figure 6.b. Approximation 4: 1st-, 2nd-, and 3rd-order Survivor Function Approximations')+
+  labs(y= "Survivor Function of Y", x = "y")+
+  scale_colour_manual("", 
+                      values = c("True Survivor Function"="black","First-Order"="blue","Second-Order"="green","Third-Order"="red"))+
+  geom_line(aes(y,Sy, color="True Survivor Function"))+
+  geom_line(aes(y,S1z, color='First-Order'))+
+  geom_line(aes(y,S2z, color='Second-Order'))+
+  geom_line(aes(y,S3z, color='Third-Order'))
+
+figure6.b
+```
+
+## Comparison of First-Order Approximations
+
+The following plots overlay the first-order approximations for approximations 1 through 4 for comparison.
+
+```{r}
+# Plots of different 1st-order approximations
+figure7.a<-ggplot()+
+  ggtitle('Figure 7.a. 1st-Order Density Approximations')+
+  labs(y= "Density of Y", x = "y")+
+  scale_colour_manual("", 
+                      values = c("True Density"="black","Approximation 1"="blue","Approximation 2"="green","Approximation 3"="red","Approximation 4"="purple"))+
+  geom_line(aes(y,fy, color="True Density"))+
+  geom_line(aes(y,f1my, color='Approximation 1'))+
+  geom_line(aes(y,f1y, color='Approximation 2'))+
+  geom_line(aes(y,g1my, color='Approximation 3'))+
+  geom_line(aes(y,g1y, color='Approximation 4'))
+
+figure7.a
+
+# Plots of different 1st-order approximations
+figure7.b<-ggplot()+
+  ggtitle('Figure 7.b. 1st-Order Survivor Function Approximations')+
+  labs(y= "Survivor Function of Y", x = "y")+
+  scale_colour_manual("", 
+                      values = c("True Survivor Function"="black","Approximation 1"="blue","Approximation 2"="green","Approximation 3"="red","Approximation 4"="purple"))+
+  geom_line(aes(y,Sy, color="True Survivor Function"))+
+  geom_line(aes(y,S1my, color='Approximation 1'))+
+  geom_line(aes(y,S1y, color='Approximation 2'))+
+  geom_line(aes(y,S1mz, color='Approximation 3'))+
+  geom_line(aes(y,S1z, color='Approximation 4'))
+
+figure7.b
+
+Median<-matrix(nrow=1000,ncol=1)
+
+for (i in 1:1000){
+  Median[i,1]<-i/500
+}
+
+yTrans<-matrix(nrow=1000,ncol=1000)
+for (i in 1:1000){
+  yTrans[i,]<-t(y)
+}
+
+trueLL<-matrix(nrow=1000,ncol=1)
+LLm1<-matrix(nrow=1000,ncol=1)
+LLy1<-matrix(nrow=1000,ncol=1)
+LLLm1<-matrix(nrow=1000,ncol=1)
+trueMedian<-matrix(nrow=1000,ncol=1)
+for (i in 1:1000){
+  trueLL[i,1]<-0
+  LLm1[i,1]<-0
+  LLy1[i,1]<-0
+  LLLm1[i,1]<-0  
+  trueMedian[i,1]<-median
+}
+
+for (i in 1:1000){
+  trueLL<-trueLL+log(log(2)/Median*exp(-yTrans[,i]*log(2)/Median))
+  LLm1<-LLm1+log(1/(1+exp(-(yTrans[,i]-Median)*2*log(2)/Median))*1/(1+exp((yTrans[,i]-Median)*2*log(2)/Median))*2*log(2)/Median)
+  LLy1<-LLy1+log(1/(1+exp(-(Median-yTrans[,i])*(-2)*log(2)/yTrans[,i]))*1/(1+exp((Median-yTrans[,i])*(-2)*log(2)/yTrans[,i]))*(2)*log(2)/yTrans[,i])
+  
+  LLLm1<-LLLm1+
+    log(
+      1/(1+exp(
+        -(log(yTrans[,i])-log(Median))*
+          (LF1z)
+      ))*
+        1/(1+exp(
+          (log(yTrans[,i])-log(Median))*
+            (LF1z)
+        ))*
+        (hcz)
+      /yTrans[,i]
+    )
+}
+
+
+# Plots of different 1st-order approximations to the likelihood
+figure8<-ggplot()+ylim(-700,900)+geom_line(aes(trueMedian,trueLL, color="True Median"))+
+  ggtitle('Figure 8. 1st-Order Log-Likelihood Approximations')+
+  labs(y= "Log-Likelihood of the Median", x = "Median")+
+  scale_colour_manual("", 
+                      values = c("True Median"="gray","True Log-Likelihood"="black","Approximation 1"="blue"))+
+  geom_line(aes(Median,trueLL, color="True Log-Likelihood"))+
+  geom_line(aes(Median,LLm1, color='Approximation 1'))
+
+figure8
